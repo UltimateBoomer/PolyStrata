@@ -161,6 +161,12 @@ if(STRATA_BUILD_POLY AND STRATA_NATIVE_EXPERTS AND (STRATA_ENABLE_CUDA OR STRATA
     target_link_libraries(strata_poly_mmq PUBLIC strata_kernels ${_strata_gpu_runtime_target})
     if(STRATA_ENABLE_HIP)
       target_compile_definitions(strata_poly_mmq PRIVATE GGML_USE_HIP=1)   # fattn.cu: no kernel of either kind on HIP
+      # STRATA_HIPBLASLT_TUNING's solutions for the BLAS path's products (src/poly/hip_lt.hpp); without the table, hipBLAS
+      if(STRATA_HIPBLASLT_AVAILABLE)
+        target_sources(strata_poly_mmq PRIVATE src/poly/hip_lt.cpp)
+        target_compile_definitions(strata_poly_mmq PRIVATE STRATA_POLY_HIPBLASLT=1)
+        target_link_libraries(strata_poly_mmq PUBLIC roc::hipblaslt hip::host)
+      endif()
     else()
       # STRATA_PREFILL_NVFP4=w4a4x2's products (mmq_nvfp4_x2.cu): the block-scaled FP4 MMA exists only in the
       # arch-specific target, so this unit alone is built with 12x -> 12xa.  For another target, or a CUDA before 12.8,

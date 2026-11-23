@@ -32,6 +32,9 @@
 #endif
 
 #include "strata/kernels/iq_kernels.hpp"
+#if STRATA_POLY_HIPBLASLT
+#include "hip_lt.hpp"
+#endif
 
 #include <cublas_v2.h>
 #include <cuda_fp16.h>
@@ -406,6 +409,10 @@ void Mmq::mul(const void* w, int ggml_type, int64_t w_rows, int64_t w_cols, size
             const int64_t r0 = host_bounds[e], r = host_bounds[e + 1] - r0;
             if (r <= 0) continue;
             kernels::iq_dequant_f16(ggml_type, (const char*) w + (size_t) e * stride, values, (uint16_t*) c.dq, stream);
+#if STRATA_POLY_HIPBLASLT
+            // STRATA_HIPBLASLT_TUNING: the table's solution for this shape (hip_lt.hpp), else hipBLAS below
+            if (hip_lt::gemm(c.dq, x + r0 * w_cols, y + r0 * ldy, r, w_rows, w_cols, ldy, s)) continue;
+#endif
             if (cublasGemmEx(c.blas, CUBLAS_OP_T, CUBLAS_OP_N, (int) w_rows, (int) r, (int) w_cols, &one, c.dq, CUDA_R_16F,
                              (int) w_cols, x + r0 * w_cols, CUDA_R_16F, (int) w_cols, &zero, y + r0 * ldy, CUDA_R_32F,
                              (int) ldy, CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT) != CUBLAS_STATUS_SUCCESS)
