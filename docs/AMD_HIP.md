@@ -476,8 +476,8 @@ is not the default. A newer `linux-firmware` is the likely cure and is a host ch
 
 ## strata-poly on AMD (beta)
 
-The four smaller models of PolyStrata's own engine (Qwen3.6, Ornith 1.5, Gemma 4, Tiel Coder) and GLM 5.3 Flash
-run through `strata-poly`, which is CUDA-shaped code; since 0.1.42-poly.4 it compiles for an AMD card through the
+The four smaller models of PolyStrata's own engine (Qwen3.6, Ornith 1.5, Gemma 4, Tiel Coder), GLM 5.3 Flash and
+Inkling 2 Mini (text only; [inkling.md](models/inkling.md#how-fast-is-it)) run through `strata-poly`, which is CUDA-shaped code; since 0.1.42-poly.4 it compiles for an AMD card through the
 same `hip_compat` headers as the main engine, with the CUDA driver's virtual memory calls mapped onto HIP's
 (`hip_compat/cuda.h`). There is no ready-made AMD engine: setup compiles one for the card. On Linux with ROCm from
 a system install or AMD's wheels in `.venv`, as for the main engine; on Windows with AMD's TheRock

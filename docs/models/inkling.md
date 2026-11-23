@@ -85,16 +85,29 @@ at 126 of the 128 steps. UD-Q2_K_XL has run there too (73 tokens/s in the short 
 on a Mac. Pictures are read on the Mac's CPU, because the picture tower has no Metal kernels: a screenshot read as 984
 rows took 3.4 s.
 
+On an AMD card it runs on strata-poly's HIP engine, as a beta, for text only: the picture tower is a CUDA program
+(setup turns pictures off there). Measured on Linux on an RX 7800 XT (16 GB, gfx1101) with a Ryzen 7 7800X3D and
+32 GB of RAM, with the engine compiled by ROCm 7.0.2, UD-Q3_K_XL at a 32K context with `--kv-whole`, as setup writes it.
+The card holds 3,057 of its 3,072 routed experts (11.3 GiB). Answers were sampled with the model's own settings, one
+request at a time, through the server:
+
+| UD-Q3_K_XL | Writes in a short chat | Reads a 7,824-token prompt | Writes after it |
+| --- | ---: | ---: | ---: |
+| RX 7800 XT | 61 tokens/s | about 430 tokens/s (18 s) | 57 tokens/s |
+
+The answers were right: 17 × 23, why the sky is blue, an iterative Fibonacci function, and a one-sentence summary of
+the long prompt. `--kv fp8` is not available there: it needs an NVIDIA card from Ampere on.
+
 ## What you need
 
 | | |
 | --- | --- |
-| **Graphics card** | One **NVIDIA** card with **8 GB of VRAM or more**. It has run on an RTX 5090 (32 GB) and on an RTX 4070 Laptop (8 GB). About 3.7 GB are taken before any expert at a 32K context. Or an **Apple Silicon Mac** (beta): it has run on an M5 Ultra. |
+| **Graphics card** | One **NVIDIA** card with **8 GB of VRAM or more**. It has run on an RTX 5090 (32 GB) and on an RTX 4070 Laptop (8 GB). About 3.7 GB are taken before any expert at a 32K context. Or an **Apple Silicon Mac** (beta): it has run on an M5 Ultra. Or an **AMD** card on Linux (beta, text only): it has run on an RX 7800 XT (16 GB). |
 | **RAM** | About **21, 17 or 13 GB** beside an 8 GB card for UD-Q4_K_XL, UD-Q3_K_XL and UD-Q2_K_XL, the installer's estimate. A 32 GB card holds any of them whole. On a Mac, setup takes UD-Q3_K_XL from 32 GB of unified memory and UD-Q2_K_XL below that. |
 | **Disk** | 9.1 to 17.6 GB for the model file. |
-| **System** | Linux or Windows 10 / 11, and a current NVIDIA driver; or macOS 15 or newer. |
+| **System** | Linux or Windows 10 / 11, and a current NVIDIA driver; Linux with ROCm for an AMD card; or macOS 15 or newer. |
 
-Not run yet: an AMD card, two cards (`--expert-gpu`, built but not run), UD-Q4_K_XL on the 8 GB card and UD-Q4_K_XL
+Not run yet: an AMD card on Windows, pictures on an AMD card, two cards (`--expert-gpu`, built but not run), UD-Q4_K_XL on the 8 GB card and UD-Q4_K_XL
 on a Mac. Pictures go through Unsloth's mmproj-F16.gguf, read on the CPU (`--vision cpu`) or the card; on a Mac, on
 the CPU. The draft file is an
 option (`--draft-model`). The engine takes one request at a time

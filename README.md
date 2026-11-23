@@ -41,7 +41,8 @@ with an 8 GB card as well, and Groot on a PC with an 8 GB RTX 5060.
   Q4_K_M, Q6_K and Q8_0 (12.5 to 20.2 GB), with MTP and an optional image projector. Q4_K_M text has run on an
   8 GB RTX 5060 and on an RTX 5090 under Linux; images, Q6_K and Q8_0 are still pending.
 - **[Inkling 2 Mini](docs/models/inkling.md)** by Thinking Machines, experimental: a file of 9 to 18 GB. It has run
-  on Linux with a 32 GB NVIDIA card and on Windows with an 8 GB laptop card. It reads pictures too, one request at a time.
+  on Linux with a 32 GB NVIDIA card, on Windows with an 8 GB laptop card and on Linux with a 16 GB AMD card (text only).
+  It reads pictures too, one request at a time.
 - **[Clover-35B-A3B-Preview](docs/models/clover.md)** by DiffuSpace, Qwen3.6-35B-A3B trained further to also write a
   block of tokens at once: a file of 13 to 21 GB. It reads text only.
 - **[Ornith 1.5](docs/models/ornith.md)**, which has Qwen3.6-35B-A3B's architecture and other weights: a file of 14 to 24 GB. It
@@ -172,7 +173,7 @@ How it works and how it was measured: [docs/BACKENDS.md](docs/BACKENDS.md#less-o
 | [MiniCPM-V 4.7 35B-A3B](docs/models/minicpmv.md) | same as above; AMD as a beta | about 25 GB beside an 8 GB card | 16 to 29 GB | Windows, Linux |
 | [Kolibri 1](docs/models/kolibri.md) | NVIDIA RTX 20 series or newer, 8 GB or more | about 33 GB beside an 8 GB card | 29 to 48 GB | Windows, Linux |
 | [Groot 19B-A3B 261023](docs/models/groot.md) (experimental) | shared CUDA/HIP backends; Q4_K_M text run on an 8 GB RTX 5060 (measured peak 7.05 GiB VRAM, 21.8 GiB RAM) | about 17 GB beside an 8 GB card for Q4_K_M, setup's fit estimate | 12.5 to 20.2 GB; images add 0.9 GB | Windows, Linux; images, Q6_K and Q8_0 untested |
-| [Inkling 2 Mini](docs/models/inkling.md) (experimental) | NVIDIA, 8 GB or more; it has run on an RTX 5090 and on an RTX 4070 Laptop (8 GB, UD-Q3_K_XL) | about 21 GB beside an 8 GB card for UD-Q4_K_XL, setup's estimate | 9 to 18 GB | Windows, Linux, Mac (beta) |
+| [Inkling 2 Mini](docs/models/inkling.md) (experimental) | NVIDIA, 8 GB or more; it has run on an RTX 5090 and on an RTX 4070 Laptop (8 GB, UD-Q3_K_XL). AMD on Linux (beta, text only): an RX 7800 XT (16 GB, UD-Q3_K_XL) | about 21 GB beside an 8 GB card for UD-Q4_K_XL, setup's estimate | 9 to 18 GB | Windows, Linux, Mac (beta) |
 | [Hy4-Flash](https://github.com/Niko1221/Strata/releases/tag/v0.2.18) (the Strata project's engine) | NVIDIA V100 to RTX 50, 8 GB or more; AMD RX 6000 to 9000 and Strix Halo; Intel Arc | 64 GB or more for SQ-64, 96 GB for SQ-96, 128 GB for SQ-128 | 130 to 181 GB, on an SSD | Windows, Linux, Mac |
 
 RAM is the installer's estimate; a larger card needs less. The installer sets up everything else: on Windows it downloads the engine ready-made, and compiles it on your PC only on a processor without AVX2, for PolyStrata's own models on an AMD card, or when your copy's engine is newer than the latest release, offering to install the tools. Two or three cards can share a model ([multi-GPU](docs/MULTI_GPU.md)). Older graphics cards, Intel Arc, Apple Silicon Macs (Qwen3.8-Flash-Next, and Qwen3.6, LFM2.5 and Inkling 2 Mini as a beta), Strix Halo and older processors without AVX2: [the full list](docs/INSTALL.md#what-you-need). Each model's card, RAM and sizes in detail are on its page.
