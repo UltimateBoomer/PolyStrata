@@ -23,6 +23,12 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#if defined(__HIP_PLATFORM_AMD__)
+// ROCm 7.0 declares __ldcs and __ldcg for __half and __half2 only.  On AMD they are plain loads (the cache hints have no
+// counterpart there), so the uint4 and float2 loads below take this fallback; the half overloads still win for theirs.
+template <class T> __device__ __forceinline__ T __ldcs(const T* p) { return *p; }
+template <class T> __device__ __forceinline__ T __ldcg(const T* p) { return *p; }
+#endif
 
 namespace strata::poly {
 namespace {
@@ -739,6 +745,39 @@ __global__ void ink_clips_kernel(InkClips c) {
     __shared__ float part[128 / WARP];
     int b = blockIdx.x, j = 0;
     while (j < 3 && b >= c.rows * c.heads[j]) b -= c.rows * c.heads[j++];
+#if defined(__HIP_PLATFORM_AMD__)
+    // The job's fields by a constant index.  With the runtime j indexing the by-value argument's arrays, ROCm 7.0.2's
+    // compiler stores the keys and values to a wrong address: a GPU memory fault at the first token on an RX 7800 XT
+    // (gfx1101).  The same steps as the CUDA path below, with the fields read another way.
+    float* x = nullptr;
+    const float* scale = nullptr;
+    uint16_t* cache = nullptr;
+    float thr = 0.f, alpha = 0.f, floor_ = 1.f;
+    int dim = 0, heads = 1;
+    bool rms = false;
+#pragma unroll
+    for (int k = 0; k < 4; ++k)
+        if (k == j) {
+            x = c.x[k], scale = c.scale[k], cache = c.cache[k];
+            thr = c.thr[k], alpha = c.alpha[k], floor_ = c.floor[k];
+            dim = c.dim[k], heads = c.heads[k], rms = c.rms[k];
+        }
+    const int row = b / heads, head = b % heads;
+    float* v = x + (size_t(row) * heads + head) * dim;
+    if (rms) rms_head(v, dim, c.eps, part);
+    else
+        clip_head(v, scale ? scale + size_t(head) * dim : nullptr, thr, dim, alpha, floor_,
+                  c.at ? c.at[2 * row] : c.pos + row, part);
+    if (!cache) return;   // each thread its own values, as clip_head() and rms_head() left them
+    long long cell = (c.at ? c.at[0] : c.pos) + row;
+    if (c.ring > 0) cell %= c.ring;
+    if (KV8) {
+        kv8_store(v, (uint8_t*) cache, cell, heads, dim, head, part);
+        return;
+    }
+    __half* to = (__half*) cache + (size_t) cell * heads * dim + (size_t) head * dim;
+    for (int i = threadIdx.x; i < dim; i += blockDim.x) to[i] = __float2half(v[i]);
+#else
     const int row = b / c.heads[j], head = b % c.heads[j];
     float* v = c.x[j] + (size_t(row) * c.heads[j] + head) * c.dim[j];
     if (c.rms[j]) rms_head(v, c.dim[j], c.eps, part);
@@ -754,6 +793,7 @@ __global__ void ink_clips_kernel(InkClips c) {
     }
     __half* to = (__half*) c.cache[j] + (size_t) cell * c.heads[j] * c.dim[j] + (size_t) head * c.dim[j];
     for (int i = threadIdx.x; i < c.dim[j]; i += blockDim.x) to[i] = __float2half(v[i]);
+#endif
 }
 
 __global__ void ink_head_rms_kernel(float* x, int dim, int heads, float eps) {
